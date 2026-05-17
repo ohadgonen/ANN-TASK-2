@@ -190,12 +190,14 @@ Test Accuracy: 76.29%
 
 
 
-The original InitialCNN used sigmoid activations after each convolutional layer. After training, I plotted the learning curves and the gradient magnitudes across epochs. The gradient plots showed that some layers changed much more than others during training, meaning that different parts of the network learned at different speeds.
+The original InitialCNN used sigmoid activations after each convolutional layer. After training, we plotted the learning curves and the gradient magnitudes across epochs. The gradient plots showed that some layers changed much more than others during training, meaning that different parts of the network learned at different speeds.
 
 The original model learned slowly over the 15 epochs. Training accuracy increased from 18.57% to 68.03%, while test accuracy increased from 27.02% to 62.67%. The best test accuracy reached by the original model was 62.80% at epoch 14.
+
+Training was performed using the Adam optimizer with a learning rate of 0.001, which adaptively updates the network weights during learning.
 
 To improve the architecture, We replaced the sigmoid activations with ReLU activations and added one BatchNorm2d layer after the first convolutional layer.  ReLU is commonly used in CNNs because it helps reduce the vanishing gradient problem and allows the network to learn faster.Batch normalization was added to keep the activations in a more stable range during training, which can improve training stability and learning speed. These changes kept the overall architecture almost the same while improving the training process.
 
 The improved model learned substantially faster and achieved significantly better performance. Already in the first epoch, the improved model reached 63.05% test accuracy, which was approximately equal to the best performance of the original network after 15 epochs. The improved model eventually reached a best test accuracy of 77.63% at epoch 5, representing a major improvement over the original architecture.
 
-However, after approximately epoch 5, the model began to overfit. While training accuracy continued increasing up to about 97%, the test loss steadily increased and the test accuracy stopped improving. This indicates that the network became very good at memorizing the training images, but less effective at classifying new unseen images.
+However, after approximately epoch 5, the model began to overfit. While training accuracy continued increasing up to 96.94%, the test loss steadily increased and the test accuracy stopped improving. This indicates that the network became very good at memorizing the training images, but less effective at classifying new unseen images.

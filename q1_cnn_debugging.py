@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+import time
 
 results_dir = Path("results/q1")
 results_dir.mkdir(parents=True, exist_ok=True)
@@ -116,6 +117,13 @@ class InitialCNN(nn.Module):
 # ----Initialize Network----
 model = InitialCNN().to(device)
 
+num_params = sum(
+    param.numel()
+    for param in model.parameters()
+    if param.requires_grad
+)
+
+print(f"Number of trainable parameters: {num_params}")
 criterion = nn.CrossEntropyLoss()
 
 optimizer = optim.Adam(
@@ -213,6 +221,7 @@ def test(model, loader):
 
 # ----Main Training Loop----
 num_epochs = 15
+epoch_times = []
 
 train_losses = []
 test_losses = []
@@ -221,6 +230,8 @@ train_accs = []
 test_accs = []
 
 for epoch in range(num_epochs):
+
+    start_time = time.time()
 
     train_loss, train_acc, grad_norms = train(
         model,
@@ -240,6 +251,11 @@ for epoch in range(num_epochs):
         test_loader
     )
 
+    end_time = time.time()
+    epoch_time = end_time - start_time
+
+    epoch_times.append(epoch_time)
+
     train_losses.append(train_loss)
     test_losses.append(test_loss)
 
@@ -254,6 +270,8 @@ for epoch in range(num_epochs):
     print(f"Test Loss: {test_loss:.4f}")
     print(f"Test Accuracy: {test_acc:.2f}%")
 
+    print(f"Epoch Time: {epoch_time:.2f} seconds")
+
     print("-" * 40)
 
 # Save Metrics
@@ -262,12 +280,13 @@ metrics_df = pd.DataFrame({
     "train_loss": train_losses,
     "test_loss": test_losses,
     "train_accuracy": train_accs,
-    "test_accuracy": test_accs
+    "test_accuracy": test_accs,
+    "epoch_time_seconds": epoch_times
 })
 
 metrics_df.to_csv(results_dir / "metrics.csv", index=False)
 
-
+'''
 # Save Gradient Statistics
 grad_df = pd.DataFrame(all_grad_norms)
 
@@ -365,4 +384,30 @@ plt.savefig(
     dpi=300
 )
 
+plt.show()
+
+'''
+
+# ----Visualize CNN First-Layer Filters----
+cnn_weights = model.conv1.weight.detach().cpu()
+
+num_filters = 16
+fig, axes = plt.subplots(4, 4, figsize=(6, 6))
+
+for i, ax in enumerate(axes.flat):
+    filt = cnn_weights[i]
+
+    # Convert from C x H x W to H x W x C
+    filt = filt.permute(1, 2, 0)
+
+    # Normalize for display
+    filt = (filt - filt.min()) / (filt.max() - filt.min())
+
+    ax.imshow(filt)
+    ax.axis("off")
+
+plt.suptitle("CNN First-Layer Filters")
+plt.tight_layout()
+
+plt.savefig(results_dir / "cnn_first_layer_filters.png", dpi=300)
 plt.show()

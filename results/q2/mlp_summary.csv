@@ -1,0 +1,2 @@
+model,trainable_parameters,best_test_accuracy,best_epoch,final_test_accuracy,average_epoch_time_seconds
+MLP,1707274,54.33,10,53.69,4.598735698064169
