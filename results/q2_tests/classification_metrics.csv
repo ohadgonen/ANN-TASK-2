@@ -1,0 +1,5 @@
+metric,value
+f1_macro,0.5378050982393768
+f1_weighted,0.5378050982393767
+fbeta_macro_beta2,0.5369100803870237
+fbeta_weighted_beta2,0.5369100803870237

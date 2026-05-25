@@ -286,7 +286,7 @@ metrics_df = pd.DataFrame({
 
 metrics_df.to_csv(results_dir / "metrics.csv", index=False)
 
-'''
+
 # Save Gradient Statistics
 grad_df = pd.DataFrame(all_grad_norms)
 
@@ -295,6 +295,9 @@ grad_df.to_csv(
     index=False
 )
 
+torch.save(model.state_dict(), results_dir / "cnn_model.pth")
+
+'''
 # Loss Curves
 plt.figure(figsize=(8, 5))
 
@@ -386,7 +389,7 @@ plt.savefig(
 
 plt.show()
 
-'''
+
 
 # ----Visualize CNN First-Layer Filters----
 cnn_weights = model.conv1.weight.detach().cpu()
@@ -411,3 +414,5 @@ plt.tight_layout()
 
 plt.savefig(results_dir / "cnn_first_layer_filters.png", dpi=300)
 plt.show()
+
+'''

@@ -250,6 +250,7 @@ summary_df = pd.DataFrame({
 })
 
 summary_df.to_csv(results_dir / "mlp_summary.csv", index=False)
+torch.save(model.state_dict(), results_dir / "mlp_model.pth")
 
 '''
 # ----Loss Curves----
@@ -285,7 +286,7 @@ plt.tight_layout()
 plt.savefig(results_dir / "mlp_accuracy_curve.png", dpi=300)
 plt.show()
 
-'''
+
 
 # ----Visualize MLP First-Layer Weights----
 mlp_weights = model.fc1.weight.detach().cpu()
@@ -310,3 +311,4 @@ plt.tight_layout()
 
 plt.savefig(results_dir / "mlp_first_layer_weights.png", dpi=300)
 plt.show()
+'''
