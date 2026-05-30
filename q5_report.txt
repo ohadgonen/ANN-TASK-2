@@ -1,0 +1,60 @@
+Question 5 - Hybrid CNN + MLP architecture
+
+The idea came from my experience using photoshop. One of the strongest tools available there for
+enhancing portraits is frequency separation, by which you can smooth out imperfections in the high
+frequency details or low frequency color separately. And in this way get much better results than
+if you tried to smooth the raw data.
+
+I wanted to find out whether separating these features with CNN and only then feeding them to the
+MLP could improve performance, because now there are basically two images with different data for
+every original one. The MLP might compare the details not only to the color belonging to the corresponding
+visual field, but to the entire image, and vice versa color with details.
+
+This is the most optimized model we tried. After many trials-and-erros the best performance we obtained
+exceeded 85%. On a laptop without a dedicated GPU it took more than two hours to run all 5 folds,
+meaning that this architecture requires significantly more resources than all the previous ones.
+
+Changes over the starter code:
+
+1. Frequency-separation dual-branch architecture (HybridNet): The core idea is to explicitly
+   split the input image into low-frequency and high-frequency components using fixed
+   convolutional filters before any learned processing. A 3x3 Gaussian kernel (low-pass) extracts
+   smooth, coarse features; a 3x3 Laplacian kernel (high-pass) extracts edges and fine details. These are
+   registered as non-trainable buffers, so they stay fixed throughout training.
+
+   Each stream is then processed by an independent CNNBranch, and the two 256-dimensional
+   feature vectors are concatenated before the classifier head. The choice to use 256 instead of 512
+   both reduces the number of parameters drastically and helps avoid overfitting. the MLP head
+   Then gets 256 + 256 = 512 vector as input.
+
+2. Replaced Tanh/Sigmoid with ReLU: Changed the activation function in all layers to F.relu.
+   ReLU avoids the vanishing gradient problem that sigmoid/tanh suffer from in deeper networks,
+   and typically leads to faster convergence.   
+
+3. Deeper CNN branches (5 conv layers, BatchNorm on all): Each CNNBranch has 5 conv layers
+   vs. the starter's 4, with BatchNorm2d after every conv (not just the first). The 5th conv
+   has no pooling after it (to preserve spatial resolution before global pooling), and its
+   output is collapsed by adaptive_avg_pool2d(x, 1) to a 256-dim vector regardless of spatial
+   size. 
+
+4. Dropout (0.3): The classifier head is Linear(512->256) -> Dropout(0.3) ->
+   Linear(256->128) -> Dropout(0.3) -> Linear(128->10). a lower dropout rate (0.3 instead of the standard 0.5)
+   allows more learned information to flow through the classifier head without over-regularizing.
+
+5. AdamW optimizer + Cosine Annealing LR schedule: Replaced Adam with AdamW(lr=0.001,
+   weight_decay=5e-4), which correctly decouples L2 regularization from the adaptive learning
+   rate. Added CosineAnnealingLR(T_max=15) to gradually reduce the learning rate over
+   training, improving final convergence.
+
+6. Lighter augmentation: The training transforms use only RandomCrop and RandomHorizontalFlip
+   (dropping the RandomRotation and RandomResizedCrop from Q4), since the frequency-splitting
+   already forces the network to learn from structured decompositions rather than raw pixels.
+
+7. 5-Fold Cross Validation: The training set (50,000 samples) is split into 5 folds of 10,000
+   samples each. For each fold, a fresh HybridNet (with its own AdamW optimizer and Cosine
+   Annealing scheduler) is trained on the remaining 40,000 samples and evaluated on the
+   held-out 10,000. This gives an unbiased estimate of generalization performance that is more
+   reliable than a single train/val split, since every sample is used for both training and
+   validation exactly once. The validation fold always uses the clean (non-augmented) transform
+   so that metrics reflect true generalization. Only then the model trains runs on 100% of the
+   training data and is tested with the test data, which wasn't touched until this last step.

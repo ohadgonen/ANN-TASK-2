@@ -1,0 +1,51 @@
+Question 4 - augmentation
+
+Adding augmentation helped to solve the overfitting problem, because for every epoch
+the model is trained on slightly different data. This means that specific features aren't
+memorized, enabling greater reproducibility to the testing data.
+
+Comparing the performance to previous models:
+Q1 (basic CNN) vs Q4 (CNN + augmentation + full BatchNorm):
+
+The network architecture is identical in both: four convolutional layers (32 -> 64 -> 128 -> 256
+channels) each followed by max-pooling, then two fully-connected layers (256 -> 10). The
+differences are purely in training conditions and normalization coverage.
+
+Q1 only had BatchNorm after the first conv layer. The remaining three conv layers (conv2,
+conv3, conv4) had no normalization, so as gradients propagated back through them the
+activation distributions could shift freely between batches. This made training less stable
+in the deeper layers and offered no regularization benefit beyond the first layer.
+
+Q4 adds BatchNorm after every conv layer. This keeps activations in a consistent range
+throughout the full depth of the network, which stabilizes gradients and acts as a
+regularizer at each stage of the feature hierarchy. The result is faster and more consistent
+convergence across epochs.
+
+Q1 was trained on unmodified images (only ToTensor + Normalize). The model would see the
+exact same pixel values for each image every epoch and could overfit to specific spatial
+arrangements in the training set. Q4 adds RandomCrop, RandomRotation, RandomResizedCrop,
+and RandomHorizontalFlip to the training pipeline. Each epoch the model sees a different
+transformed version of each image, which prevents memorization of exact pixel layouts and
+forces the model to learn features that generalize across positions, scales, and orientations.
+
+Together, these changes reduce the train/test accuracy gap visible in the loss curves: Q1
+shows the two curves diverging as training progresses, while Q4 keeps them closer together
+throughout, which is the direct signature of reduced overfitting.
+
+
+Changes over the starter code:
+
+1. Data augmentation on training set: Added RandomCrop(32, padding=4), RandomRotation(15),
+   RandomResizedCrop(32, scale=(0.8, 1.0)), and RandomHorizontalFlip() to train_transform.
+   These transformations synthetically increase dataset diversity so the model sees different
+   crops, orientations, and scales of each image during training, reducing overfitting. The
+   test transform is unchanged (only ToTensor + Normalize).
+
+2. BatchNorm on all conv layers: Added nn.BatchNorm2d after every convolutional layer (conv1
+   through conv4). Previously only conv1 had BatchNorm. Normalizing activations at each layer
+   stabilizes training, reduces internal covariate shift, and acts as a regularizer throughout
+   the full feature hierarchy rather than just at the first layer.
+
+3. Replaced Tanh/Sigmoid with ReLU: Changed the activation function in all layers to F.relu.
+   ReLU avoids the vanishing gradient problem that sigmoid/tanh suffer from in deeper networks,
+   and typically leads to faster convergence.
